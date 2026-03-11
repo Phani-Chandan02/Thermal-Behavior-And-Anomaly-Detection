@@ -4,3 +4,6 @@ venv/
 dataset_yolo/
 TEST MSX/
 *.mp4
+test_images1/
+thermal_results/
+runs/
