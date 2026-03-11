@@ -1,0 +1,6 @@
+100_FLIR/
+models/
+venv/
+dataset_yolo/
+TEST MSX/
+*.mp4
