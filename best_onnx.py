@@ -5,6 +5,8 @@ import os
 
 session = ort.InferenceSession("best.onnx")
 
+input_name = session.get_inputs()[0].name
+
 input_folder = "test_images"
 
 for img_name in os.listdir(input_folder):
@@ -12,10 +14,12 @@ for img_name in os.listdir(input_folder):
     img_path = os.path.join(input_folder, img_name)
     img = cv2.imread(img_path)
 
-    img_resized = cv2.resize(img,(640,640))
-    img_input = img_resized.transpose(2,0,1)
-    img_input = np.expand_dims(img_input,0).astype(np.float32)/255.0
+    img_resized = cv2.resize(img, (640,640))
+    img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
 
-    outputs = session.run(None,{session.get_inputs()[0].name: img_input})
+    img_input = img_rgb.transpose(2,0,1)
+    img_input = np.expand_dims(img_input,0).astype(np.float32) / 255.0
 
-    print("Processed:",img_name)
+    outputs = session.run(None,{input_name: img_input})
+
+    print("Processed:", img_name)
