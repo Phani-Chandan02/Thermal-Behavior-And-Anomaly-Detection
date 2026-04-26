@@ -1,0 +1,87 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Large Model Files (ONNX, PyTorch weights)
+*.onnx
+weights/
+*.pt
+best.pt
+last.pt
+best_onnx.py
+
+# Datasets (usually large)
+dataset_yolo/
+100_FLIR/
+test_images/
+test_images1/
+test_behaviour_images/
+themal_behaviour1/
+Behaviour_test/
+cropped_images/
+
+# Generated outputs and results
+outputs/
+results/
+runs/
+thermal_results/
+thermal_results_1/
+thermal_heat_images/
+thermal_heat_analyzed/
+thermal_temperature_analyzed/
+thermal_temperature_images/
+models/
+project/
+
+# Project specific
+*.csv
+*.log
+events_log.csv
+thermal_heat_results.txt
+thermal_temperature_results.csv
+
+# Videos and media
+*.mp4
+*.avi
+*.mov
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+.env
+*.bak
+TEST MSX/
