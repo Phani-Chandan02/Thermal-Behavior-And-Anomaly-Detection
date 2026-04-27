@@ -41,7 +41,7 @@ weights/
 best.pt
 last.pt
 best_onnx.py
-
+frame2vid.py
 # Datasets (usually large)
 dataset_yolo/
 100_FLIR/
@@ -53,7 +53,7 @@ Behaviour_test/
 cropped_images/
 
 # Generated outputs and results
-outputs/
+
 results/
 runs/
 thermal_results/
