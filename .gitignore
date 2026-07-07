@@ -64,7 +64,8 @@ thermal_temperature_analyzed/
 thermal_temperature_images/
 models/
 project/
-
+docs/
+weights/
 # Project specific
 *.csv
 *.log
@@ -85,3 +86,9 @@ Thumbs.db
 .env
 *.bak
 TEST MSX/
+
+# Datasets, outputs, and root model weights
+data/
+output/
+outputs/
+best.onnx

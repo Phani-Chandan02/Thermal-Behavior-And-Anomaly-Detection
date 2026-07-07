@@ -1,0 +1,9 @@
+{
+  "conf_threshold": 0.35,
+  "loiter_time": 6.0,
+  "loiter_dist": 50.0,
+  "running_speed": 40.0,
+  "clustering_dist": 80.0,
+  "clustering_time": 3.0,
+  "restricted_boundary_ratio": 0.55
+}

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thermal Security Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- CSS -->
+    <style>
+        :root {
+            --bg-color: #0f111a;
+            --surface-color: rgba(25, 28, 41, 0.6);
+            --surface-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f0f5;
+            --text-secondary: #9499b8;
+            --accent-primary: #5c6bc0;
+            --accent-hover: #7986cb;
+            --danger: #ff5252;
+            --warning: #ffb142;
+            --info: #34ace0;
+            --clustering: #ff00ff;
+            --success: #33d9b2;
+            --glass-blur: 12px;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(92, 107, 192, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(255, 82, 82, 0.1) 0px, transparent 50%);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: var(--surface-color);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--surface-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .glass-panel:hover {
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+            font-weight: 600;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.8rem;
+            margin-bottom: 0;
+        }
+
+        /* Layout Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 1.5rem;
+        }
+        
+        .main-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .side-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Stats Row */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Video Player */
+        .video-container {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+        }
+        
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        /* Snapshots */
+        .snapshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .snapshot-item {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--surface-border);
+            transition: transform 0.2s;
+        }
+        
+        .snapshot-item:hover {
+            transform: scale(1.05);
+            cursor: pointer;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        /* Lists and Tables */
+        .log-container {
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid transparent;
+        }
+        
+        .log-item.Intrusion { border-color: var(--danger); }
+        .log-item.Aggressive { border-color: var(--clustering); }
+        .log-item.Running { border-color: var(--warning); }
+        .log-item.Loitering { border-color: var(--info); }
+
+        .log-time { color: var(--text-secondary); font-size: 0.85rem; }
+        .log-behavior { font-weight: 500; }
+        .log-track { color: var(--text-secondary); font-size: 0.85rem; }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-primary);
+        }
+        
+        .range-value {
+            font-size: 0.85rem;
+            text-align: right;
+            color: var(--text-primary);
+        }
+
+        .btn {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .btn:hover { background: var(--accent-hover); }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--surface-border);
+        }
+        
+        .btn-outline:hover { background: rgba(255, 255, 255, 0.05); }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .badge.Intrusion { background: rgba(255, 82, 82, 0.2); color: var(--danger); }
+        .badge.Aggressive { background: rgba(255, 0, 255, 0.2); color: var(--clustering); }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1><i data-lucide="shield-alert"></i> Thermal Security Dashboard</h1>
+        <div class="glass-panel" style="padding: 8px 16px; border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+            <div style="width:8px; height:8px; background:var(--success); border-radius:50%; box-shadow: 0 0 8px var(--success);"></div>
+            <span style="font-size: 0.9rem; font-weight: 500;">System Active</span>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" style="margin-bottom: 1.5rem;">
+        <div class="glass-panel stat-card">
+            <i data-lucide="crosshair" style="color: var(--danger);"></i>
+            <div class="stat-value" id="stat-intrusion">0</div>
+            <div class="stat-label">Intrusions</div>
+        </div>
+        <div class="glass-panel stat-card">
+            <i data-lucide="users" style="color: var(--clustering);"></i>
+            <div class="stat-value" id="stat-clustering">0</div>
+            <div class="stat-label">Clustering Events</div>
+        </div>
+        <div class="glass-panel stat-card">
+            <i data-lucide="activity" style="color: var(--warning);"></i>
+            <div class="stat-value" id="stat-running">0</div>
+            <div class="stat-label">Running Events</div>
+        </div>
+        <div class="glass-panel stat-card">
+            <i data-lucide="clock" style="color: var(--info);"></i>
+            <div class="stat-value" id="stat-loitering">0</div>
+            <div class="stat-label">Loitering Events</div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        
+        <!-- Main Column -->
+        <div class="main-column">
+            
+            <!-- Video Feed -->
+            <div class="glass-panel">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <h3><i data-lucide="video" style="width:20px; height:20px; vertical-align:middle; margin-right:8px;"></i> Surveillance Feed</h3>
+                    <select id="video-selector" style="background: var(--surface-color); color: white; border: 1px solid var(--surface-border); border-radius: 6px; padding: 4px 8px; font-family: 'Outfit';">
+                        <option value="/output/videos/thermal_val_output.mp4">Standard Evaluation</option>
+                        <option value="/output/results/custom_behavior_output.mp4">Custom FLIR Evaluation</option>
+                    </select>
+                </div>
+                <div class="video-container">
+                    <video id="video-player" controls autoplay muted loop>
+                        <source src="/output/videos/thermal_val_output.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+
+            <!-- Snapshots -->
+            <div class="glass-panel">
+                <h3><i data-lucide="camera" style="width:20px; height:20px; vertical-align:middle; margin-right:8px;"></i> Event Snapshots</h3>
+                <div class="snapshot-grid" id="snapshot-grid">
+                    <div style="color: var(--text-secondary); grid-column: 1/-1;">Loading snapshots...</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="glass-panel">
+                <h3><i data-lucide="pie-chart" style="width:20px; height:20px; vertical-align:middle; margin-right:8px;"></i> Behavior Breakdown</h3>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="behaviorChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Side Column -->
+        <div class="side-column">
+            
+            <!-- Alerts Ticker -->
+            <div class="glass-panel" style="flex: 1;">
+                <h3><i data-lucide="bell" style="width:20px; height:20px; vertical-align:middle; margin-right:8px;"></i> Recent Alerts</h3>
+                <div class="log-container" id="log-container">
+                    <div style="color: var(--text-secondary);">Loading logs...</div>
+                </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="glass-panel">
+                <h3><i data-lucide="sliders" style="width:20px; height:20px; vertical-align:middle; margin-right:8px;"></i> Parameters</h3>
+                <div id="config-form">
+                    <div class="form-group">
+                        <label>Loitering Time (sec)</label>
+                        <input type="range" id="loiter_time" min="1" max="15" step="1" oninput="document.getElementById('loiter_time_val').innerText=this.value">
+                        <div class="range-value"><span id="loiter_time_val">-</span>s</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Clustering Distance (px)</label>
+                        <input type="range" id="clustering_dist" min="30" max="150" step="5" oninput="document.getElementById('clustering_dist_val').innerText=this.value">
+                        <div class="range-value"><span id="clustering_dist_val">-</span>px</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Restricted Zone Ratio</label>
+                        <input type="range" id="restricted_boundary_ratio" min="0.1" max="0.9" step="0.05" oninput="document.getElementById('restricted_val').innerText=this.value">
+                        <div class="range-value"><span id="restricted_val">-</span></div>
+                    </div>
+                    <button class="btn" onclick="saveConfig()">Save Config</button>
+                </div>
+            </div>
+
+            <!-- Runner -->
+            <div class="glass-panel">
+                <h3><i data-lucide="terminal" style="width:20px; height:20px; vertical-align:middle; margin-right:8px;"></i> Execution Hub</h3>
+                <button class="btn" onclick="runScript('evaluate_custom_dataset.py')"><i data-lucide="play"></i> Run Custom Eval</button>
+                <button class="btn btn-outline" onclick="runScript('thermal_behavior_video.py')"><i data-lucide="play-circle"></i> Run Standard Eval</button>
+                <button class="btn btn-outline" onclick="runScript('best_onnx.py')"><i data-lucide="cpu"></i> Run ONNX Inference</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Chart Instance
+        let chart;
+
+        // Fetch Data
+        async function updateDashboard() {
+            try {
+                // Fetch Stats
+                const statsRes = await fetch('/api/stats');
+                const stats = await statsRes.json();
+                document.getElementById('stat-intrusion').innerText = stats['Intrusion'] || 0;
+                document.getElementById('stat-clustering').innerText = stats['Aggressive Clustering'] || 0;
+                document.getElementById('stat-running').innerText = stats['Running'] || 0;
+                document.getElementById('stat-loitering').innerText = stats['Loitering'] || 0;
+
+                // Update Chart
+                const labels = ['Intrusion', 'Aggressive Clustering', 'Running', 'Loitering'];
+                const data = [stats['Intrusion'] || 0, stats['Aggressive Clustering'] || 0, stats['Running'] || 0, stats['Loitering'] || 0];
+                if (chart) {
+                    chart.data.datasets[0].data = data;
+                    chart.update();
+                } else {
+                    const ctx = document.getElementById('behaviorChart').getContext('2d');
+                    chart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: ['#ff5252', '#ff00ff', '#ffb142', '#34ace0'],
+                                borderWidth: 0,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: { color: '#f0f0f5', font: { family: 'Outfit' } }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Fetch Logs
+                const logsRes = await fetch('/api/logs');
+                const logs = await logsRes.json();
+                const logContainer = document.getElementById('log-container');
+                logContainer.innerHTML = '';
+                logs.slice(0, 30).forEach(log => {
+                    const behaviorClass = log.Behavior ? log.Behavior.split(' ')[0] : '';
+                    const div = document.createElement('div');
+                    div.className = `log-item ${behaviorClass}`;
+                    div.innerHTML = `
+                        <div>
+                            <div class="log-behavior">${log.Behavior} <span class="badge ${behaviorClass}">${log.Confidence ? (parseFloat(log.Confidence)*100).toFixed(0)+'%' : ''}</span></div>
+                            <div class="log-track">Track ID: ${log.TrackID}</div>
+                        </div>
+                        <div class="log-time">${log.Time || 'N/A'}</div>
+                    `;
+                    logContainer.appendChild(div);
+                });
+
+                // Fetch Snapshots
+                const snapRes = await fetch('/api/snapshots');
+                const snaps = await snapRes.json();
+                const snapGrid = document.getElementById('snapshot-grid');
+                if (snaps.length > 0) {
+                    snapGrid.innerHTML = '';
+                    snaps.slice(0, 16).forEach(snap => {
+                        const img = document.createElement('img');
+                        img.src = snap;
+                        img.className = 'snapshot-item';
+                        img.title = snap.split('/').pop();
+                        snapGrid.appendChild(img);
+                    });
+                } else {
+                    snapGrid.innerHTML = '<div style="color: var(--text-secondary); grid-column: 1/-1;">No snapshots yet.</div>';
+                }
+
+            } catch (err) {
+                console.error("Error fetching data:", err);
+            }
+        }
+
+        // Config Management
+        let currentConfig = {};
+        async function loadConfig() {
+            const res = await fetch('/api/config');
+            currentConfig = await res.json();
+            
+            if (currentConfig.loiter_time) {
+                document.getElementById('loiter_time').value = currentConfig.loiter_time;
+                document.getElementById('loiter_time_val').innerText = currentConfig.loiter_time;
+            }
+            if (currentConfig.clustering_dist) {
+                document.getElementById('clustering_dist').value = currentConfig.clustering_dist;
+                document.getElementById('clustering_dist_val').innerText = currentConfig.clustering_dist;
+            }
+            if (currentConfig.restricted_boundary_ratio) {
+                document.getElementById('restricted_boundary_ratio').value = currentConfig.restricted_boundary_ratio;
+                document.getElementById('restricted_val').innerText = currentConfig.restricted_boundary_ratio;
+            }
+        }
+
+        async function saveConfig() {
+            currentConfig.loiter_time = parseFloat(document.getElementById('loiter_time').value);
+            currentConfig.clustering_dist = parseFloat(document.getElementById('clustering_dist').value);
+            currentConfig.restricted_boundary_ratio = parseFloat(document.getElementById('restricted_boundary_ratio').value);
+            
+            await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentConfig)
+            });
+            
+            alert('Configuration saved! Thresholds will update in the next run.');
+        }
+
+        // Script Runner
+        async function runScript(scriptName) {
+            if(confirm(`Are you sure you want to run ${scriptName}? This runs asynchronously in the background.`)) {
+                await fetch('/api/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({script: scriptName})
+                });
+                alert(`Started ${scriptName}! Dashboard will update as new data appears.`);
+            }
+        }
+
+        // Video Player source switcher
+        document.getElementById('video-selector').addEventListener('change', function() {
+            const player = document.getElementById('video-player');
+            player.src = this.value;
+            player.play();
+        });
+
+        // Initialize and Poll
+        loadConfig();
+        updateDashboard();
+        setInterval(updateDashboard, 3000); // Poll every 3s
+    </script>
+</body>
+</html>
